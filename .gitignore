@@ -6,6 +6,8 @@ edge
 Publish
 .vscode
 .env
+/node_modules
+node_modules
 
 *.user
 *.suo
