@@ -2,9 +2,9 @@ var builder = require('botbuilder');
 require('dotenv').config();
 var botbuilder_azure = require('botbuilder-azure');
 var lifx = require('lifx-http-api'),
-  client;
+  lifxClient;
 
-client = new lifx({
+lifxClient = new lifx({
   bearerToken: process.env['LifxApiKey']
 });
 
@@ -27,12 +27,15 @@ const recognizer = new builder.LuisRecognizer(luisModelUrl);
 const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   .matches('Greeting', session => {
     session.send('Sup, yo!');
+    // session.send('hello Impale967, how is your day?');
   })
   .matches('Thank You', session => {
     session.send('No problem! Glad I could help.');
   })
   .matches('Help', session => {
-    session.send('I can control the lights in your house. You can say things like, "Turn the kitchen lights on".');
+    session.send(
+      'I can control the lights in your house. You can say things like, "Turn the kitchen lights on".'
+    );
   })
   .matches('Cancel', session => {
     session.send('OK. Canceled.');
@@ -42,25 +45,30 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
     session.send('OK! One sec...');
 
     let lightState;
-    let location = builder.EntityRecognizer.findEntity(args.entities, 'light');
-    let color = builder.EntityRecognizer.findEntity(args.entities, 'color');
+    let location = builder.EntityRecognizer.findEntity(args.entities, 'Light');
+    location = { entity: 'Your home office' }; //TODO: this is madness!
+    // let color = builder.EntityRecognizer.findEntity(args.entities, 'color');
 
-    if (!color) {
-      lightState = builder.EntityRecognizer.findEntity(args.entities, 'state');
-    } else {
-      lightState = {
-        entity: 'on',
-        type: 'state',
-        startIndex: 0,
-        endIndex: 1,
-        score: 100
-      };
-    }
+    // if (!color) {
+    lightState = builder.EntityRecognizer.findEntity(args.entities, 'State'); //TODO - case sensitive. make it cry
+    // } else {
+    //   lightState = {
+    //     entity: 'on',
+    //     type: 'state',
+    //     startIndex: 0,
+    //     endIndex: 1,
+    //     score: 100
+    //   };
+    // }
 
     // got both location and light state, move on to the next step
+    console.log(location);
+    console.log(lightState);
+
     if (location && lightState) {
       // we call LIFX
-      controlLights(session, location.entity, lightState.entity, color && color.entity);
+      // controlLights(session, location.entity, lightState.entity, color && color.entity);
+      controlLights(session, location.entity, lightState.entity);
     }
 
     // got a location, but no light state
@@ -70,7 +78,8 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
       );
     }
   })
-  .onDefault(session => {
+  .onDefault((session, args) => {
+    console.log(args);
     session.send("Sorry, I did not understand '%s'.", session.message.text);
   });
 
@@ -87,8 +96,9 @@ function controlLights(session, location, lightState, color) {
     stateToSet.color = `${color} saturation:1.0`;
     message += ` and was set to ${color}`;
   }
-  client
-    .setState('label:Bottom Lamp', stateToSet)
+  // TODO: use your light name here
+  lifxClient
+    .setState('group:Dads Office', stateToSet)
     .then(result => {
       session.send(message);
       session.endDialog();
