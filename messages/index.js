@@ -20,7 +20,7 @@ var bot = new builder.UniversalBot(connector, {
 
 let luisModelUrl = `https://${process.env['LuisAPIHostName']}/luis/v2.0/apps/${
   process.env['LuisAppId']
-}?subscription-key=${process.env['LuisAPIKey']}`;
+  }?subscription-key=${process.env['LuisAPIKey']}`;
 
 // Main dialog with LUIS
 const recognizer = new builder.LuisRecognizer(luisModelUrl);
