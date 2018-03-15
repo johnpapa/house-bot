@@ -20,14 +20,13 @@ var bot = new builder.UniversalBot(connector, {
 
 let luisModelUrl = `https://${process.env['LuisAPIHostName']}/luis/v2.0/apps/${
   process.env['LuisAppId']
-  }?subscription-key=${process.env['LuisAPIKey']}`;
+}?subscription-key=${process.env['LuisAPIKey']}`;
 
 // Main dialog with LUIS
 const recognizer = new builder.LuisRecognizer(luisModelUrl);
 const intents = new builder.IntentDialog({ recognizers: [recognizer] })
   .matches('Greeting', session => {
     session.send('Sup, yo!');
-    // session.send('hello Impale967, how is your day?');
   })
   .matches('Thank You', session => {
     session.send('No problem! Glad I could help.');
@@ -47,7 +46,7 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
     let lightState;
     let location = builder.EntityRecognizer.findEntity(args.entities, 'Light');
     location = { entity: 'Your home office' }; //TODO: this is madness!
-    // let color = builder.EntityRecognizer.findEntity(args.entities, 'color');
+    let color = builder.EntityRecognizer.findEntity(args.entities, 'Color');
 
     // if (!color) {
     lightState = builder.EntityRecognizer.findEntity(args.entities, 'State'); //TODO - case sensitive. make it cry
@@ -62,13 +61,29 @@ const intents = new builder.IntentDialog({ recognizers: [recognizer] })
     // }
 
     // got both location and light state, move on to the next step
+    console.log('************************');
     console.log(location);
     console.log(lightState);
+    console.log(color);
+    console.log('************************');
 
-    if (location && lightState) {
+    if (location && (lightState || color)) {
       // we call LIFX
-      // controlLights(session, location.entity, lightState.entity, color && color.entity);
-      controlLights(session, location.entity, lightState.entity);
+      lightState = lightState || {
+        entity: 'on',
+        type: 'state',
+        startIndex: 0,
+        endIndex: 1,
+        score: 100
+      };
+
+      controlLights(
+        session,
+        location.entity,
+        lightState.entity,
+        color && color.entity
+      );
+      // controlLights(session, location.entity, lightState.entity);
     }
 
     // got a location, but no light state
@@ -96,6 +111,7 @@ function controlLights(session, location, lightState, color) {
     stateToSet.color = `${color} saturation:1.0`;
     message += ` and was set to ${color}`;
   }
+
   // TODO: use your light name here
   lifxClient
     .setState('group:Dads Office', stateToSet)
