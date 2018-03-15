@@ -10,8 +10,8 @@ lifxClient = new lifx({
 
 var connector = new botbuilder_azure.BotServiceConnector({
   appId: process.env['MicrosoftAppId'],
-  appPassword: process.env['MicrosoftAppPassword'],
-  openIdMetadata: process.env['BotOpenIdMetadata']
+  appPassword: process.env['MicrosoftAppPassword']
+  // openIdMetadata: process.env['BotOpenIdMetadata']
 });
 
 var bot = new builder.UniversalBot(connector, {
